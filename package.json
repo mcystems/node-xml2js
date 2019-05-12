@@ -76,7 +76,6 @@
     "xmlbuilder": "~10.0.0"
   },
   "devDependencies": {
-    "coffee-script": ">=1.10.0",
     "coveralls": "^3.0.1",
     "diff": ">=1.0.8",
     "docco": ">=0.6.2",
