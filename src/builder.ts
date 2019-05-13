@@ -1,5 +1,5 @@
-import builder from 'xmlbuilder';
 import {builderDefaults, BuilderOption} from './defaults';
+import * as xmlbuilder from "xmlbuilder";
 
 const requiresCDATA = entry => (typeof entry === "string") && ((entry.indexOf('&') >= 0) || (entry.indexOf(
   '>') >= 0) || (entry.indexOf('<') >= 0));
@@ -17,17 +17,10 @@ let escapeCDATA = entry =>
   entry.replace(']]>', ']]]]><![CDATA[>');
 
 export class Builder {
-  private options: BuilderOption;
+  readonly options: BuilderOption;
 
-  constructor(opts: BuilderOption) {
-    // copy this versions default options
-    for (let key of Object.keys(builderDefaults)) {
-      this.options[key] = builderDefaults[key];
-    }
-    // overwrite them with the specified options, if any
-    for (let key of Object.keys(opts || {})) {
-      this.options[key] = opts[key];
-    }
+  constructor(options: BuilderOption) {
+    this.options = options;
   }
 
   private render(element, obj) {
@@ -121,11 +114,11 @@ export class Builder {
       ({rootName} = this.options);
     }
 
-    const rootElement = builder.create(rootName, this.options.xmldec, this.options.doctype, {
-      headless: this.options.headless,
-      allowSurrogateChars: this.options.allowSurrogateChars
+    const rootElement = xmlbuilder.create(rootName, this.options.xmldec, this.options.doctype, {
+      headless: this.options.headless
+      //allowSurrogateChars: this.options.allowSurrogateChars
     });
 
     return this.render(rootElement, rootObj).end(this.options.renderOpts);
   }
-};
+}

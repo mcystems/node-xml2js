@@ -5,9 +5,16 @@
     "sourceMap": true,
     "alwaysStrict": true,
     "strictNullChecks": true,
+    "declaration": true,
+    "pretty": true,
     "outDir": "build"
   },
   "exclude": [
     "node_modules"
+  ],
+  "compileOnSave": true,
+  "include": [
+    "**/src/*",
+    "**/test/*"
   ]
 }

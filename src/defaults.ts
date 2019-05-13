@@ -12,8 +12,8 @@ export interface ElementValidator {
 
 export interface RenderOpts {
   pretty: boolean;
-  indent: string;
-  newline: string;
+  indent?: string;
+  newline?: string;
 }
 
 export interface XmlDecl {
@@ -30,7 +30,10 @@ export interface BuilderOption {
   xmldec: XmlDecl;
   doctype: any | null;
   headless: boolean;
-  allowSurrogateChars: boolean;
+  /**
+   * Deprecated option: https://github.com/oozcitak/xmlbuilder-js/commit/1f9b41a7ef5bd3f0f03d57439392d572f0adc189
+   */
+  allowSurrogateChars?: boolean;
   cdata: boolean
 }
 
@@ -124,6 +127,6 @@ export const builderDefaults: BuilderOption = {
   doctype: null,
   headless: false,
   renderOpts: { 'pretty': true, 'indent': ' ', 'newline': '\n' },
-  rootName: "",
+  rootName: "root",
   xmldec: { 'version': '1.0', 'encoding': 'UTF-8', 'standalone': true }
 };
