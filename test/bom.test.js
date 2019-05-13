@@ -5,13 +5,14 @@
  */
 const xml2js = require('../src/xml2js');
 const assert = require('assert');
-const equ = assert.equal;
+const equ = assert.strictEqual;
 
 module.exports = {
-  'test decoded BOM'(test) {
+  'test decoded BOM': function (test) {
     const demo = '\uFEFF<xml><foo>bar</foo></xml>';
     return xml2js.parseString(demo, function(err, res) {
-      equ(err, undefined);
+      equ(err, null);
+
       equ(res.xml.foo[0], 'bar');
       return test.done();
     });

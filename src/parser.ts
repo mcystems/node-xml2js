@@ -1,60 +1,68 @@
 /*
  * decaffeinate suggestions:
- * DS001: Remove Babel/TypeScript constructor workaround
- * DS101: Remove unnecessary use of Array.from
  * DS102: Remove unnecessary code created because of implicit returns
  * DS203: Remove `|| {}` from converted for-own loops
  * DS205: Consider reworking code to avoid use of IIFEs
  * DS207: Consider shorter variations of null checks
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
-"use strict";
 
-const sax = require('sax');
-const events = require('events');
-const bom = require('./bom');
-const processors = require('./processors');
-const { setImmediate } = require('timers');
-const { defaults } = require('./defaults');
+import * as sax from 'sax';
+import * as events from 'events';
+import {stripBOM} from './bom';
+import {NormalizeProcessor} from './processors';
+import {setImmediate} from 'timers';
+import {ElementNameProcessor, ElementValueProcessor, parserDefaults, ParserOption} from './defaults';
 
 // Underscore has a nice function for this, but we try to go without dependencies
 const isEmpty = thing => (typeof thing === "object") && (thing != null) && (Object.keys(thing).length === 0);
 
-const processItem = function(processors, item, key) {
-  for (let process of Array.from(processors)) { item = process(item, key); }
+const processValue = function (processors: ElementValueProcessor[], item, key?) {
+  for (let processor of processors) {
+    item = processor.process(item, key);
+  }
   return item;
 };
 
-exports.Parser = class Parser extends events.EventEmitter {
-  constructor(opts) {
-    // if this was called without 'new', create an instance with new and return
+const processName = function (processors: ElementNameProcessor[], item) {
+  for (let processor of processors) {
+    item = processor.process(item);
+  }
+  return item;
+};
+
+export class Parser extends events.EventEmitter {
+  private options: ParserOption;
+  readonly xmlnsKey: string;
+  private remaining: string;
+  private saxParser: any;
+  private resultObject: any;
+  private EXPLICIT_CHARKEY: boolean;
+
+  constructor(opts: ParserOption) {
+    super();
     let key, value;
-    {
-      // Hack: trick Babel/TypeScript into allowing this before super.
-      if (false) { super(); }
-      let thisFn = (() => { return this; }).toString();
-      let thisName = thisFn.match(/return (?:_assertThisInitialized\()*(\w+)\)*;/)[1];
-      eval(`${thisName} = this;`);
-    }
     this.processAsync = this.processAsync.bind(this);
     this.assignOrPush = this.assignOrPush.bind(this);
     this.reset = this.reset.bind(this);
     this.parseString = this.parseString.bind(this);
-    if (!(this instanceof exports.Parser)) { return new exports.Parser(opts); }
+    if (!(this instanceof module.exports.Parser)) {
+      return new exports.Parser(opts);
+    }
     // copy this versions default options
-    this.options = {};
-    for (key of Object.keys(defaults["0.2"] || {})) { value = defaults["0.2"][key]; this.options[key] = value; }
+    for (key of Object.keys(parserDefaults)) {
+      this.options[key] = parserDefaults[key];
+    }
     // overwrite them with the specified options, if any
-    for (key of Object.keys(opts || {})) { value = opts[key]; this.options[key] = value; }
+    for (key of Object.keys(opts || {})) {
+      this.options[key] = opts[key];
+    }
     // define the key used for namespaces
     if (this.options.xmlns) {
-      this.options.xmlnskey = this.options.attrkey + "ns";
+      this.xmlnsKey = this.options.attrkey + "ns";
     }
     if (this.options.normalizeTags) {
-      if (!this.options.tagNameProcessors) {
-        this.options.tagNameProcessors = [];
-      }
-      this.options.tagNameProcessors.unshift(processors.normalize);
+      this.options.tagNameProcessors.unshift(new NormalizeProcessor());
     }
 
     this.reset();
@@ -90,17 +98,17 @@ exports.Parser = class Parser extends events.EventEmitter {
         return obj[key] = [newValue];
       }
     } else {
-      if (!(obj[key] instanceof Array)) { obj[key] = [obj[key]]; }
+      if (!(obj[key] instanceof Array)) {
+        obj[key] = [obj[key]];
+      }
       return obj[key].push(newValue);
     }
   }
 
   reset() {
-    // remove all previous listeners for events, to prevent event listener
-    // accumulation
+    // remove all previous listeners for events, to prevent event listener accumulation
     this.removeAllListeners();
-    // make the SAX parser. tried trim and normalize, but they are not
-    // very helpful
+    // make the SAX parser. tried trim and normalize, but they are not very helpful
     this.saxParser = sax.parser(this.options.strict, {
       trim: false,
       normalize: false,
@@ -134,21 +142,23 @@ exports.Parser = class Parser extends events.EventEmitter {
     // better pass it as explicitCharkey option to the constructor
     this.EXPLICIT_CHARKEY = this.options.explicitCharkey;
     this.resultObject = null;
-    const stack = [];
+    const stack: any[] = [];
     // aliases, so we don't have to type so much
-    const { attrkey } = this.options;
-    const { charkey } = this.options;
+    const {attrkey} = this.options;
+    const {charkey} = this.options;
 
     this.saxParser.onopentag = node => {
-      const obj = {};
+      const obj: any = {};
       obj[charkey] = "";
       if (!this.options.ignoreAttrs) {
         for (let key of Object.keys(node.attributes || {})) {
           if (!(attrkey in obj) && !this.options.mergeAttrs) {
             obj[attrkey] = {};
           }
-          const newValue = this.options.attrValueProcessors ? processItem(this.options.attrValueProcessors, node.attributes[key], key) : node.attributes[key];
-          const processedKey = this.options.attrNameProcessors ? processItem(this.options.attrNameProcessors, key) : key;
+          const newValue = this.options.attrValueProcessors
+            ? processValue(this.options.attrValueProcessors, node.attributes[key], key) : node.attributes[key];
+          const processedKey = this.options.attrNameProcessors
+            ? processName(this.options.attrNameProcessors, key) : key;
           if (this.options.mergeAttrs) {
             this.assignOrPush(obj, processedKey, newValue);
           } else {
@@ -158,9 +168,10 @@ exports.Parser = class Parser extends events.EventEmitter {
       }
 
       // need a place to store the node name
-      obj["#name"] = this.options.tagNameProcessors ? processItem(this.options.tagNameProcessors, node.name) : node.name;
+      obj["#name"] = this.options.tagNameProcessors
+        ? processName(this.options.tagNameProcessors, node.name) : node.name;
       if (this.options.xmlns) {
-        obj[this.options.xmlnskey] = {uri: node.uri, local: node.local};
+        obj[this.xmlnsKey] = {uri: node.uri, local: node.local};
       }
       return stack.push(obj);
     };
@@ -170,10 +181,12 @@ exports.Parser = class Parser extends events.EventEmitter {
       let node;
       let obj = stack.pop();
       const nodeName = obj["#name"];
-      if (!this.options.explicitChildren || !this.options.preserveChildrenOrder) { delete obj["#name"]; }
+      if (!this.options.explicitChildren || !this.options.preserveChildrenOrder) {
+        delete obj["#name"];
+      }
 
       if (obj.cdata === true) {
-        ({ cdata } = obj);
+        ({cdata} = obj);
         delete obj.cdata;
       }
 
@@ -183,9 +196,14 @@ exports.Parser = class Parser extends events.EventEmitter {
         emptyStr = obj[charkey];
         delete obj[charkey];
       } else {
-        if (this.options.trim) { obj[charkey] = obj[charkey].trim(); }
-        if (this.options.normalize) { obj[charkey] = obj[charkey].replace(/\s{2,}/g, " ").trim(); }
-        obj[charkey] = this.options.valueProcessors ? processItem(this.options.valueProcessors, obj[charkey], nodeName) : obj[charkey];
+        if (this.options.trim) {
+          obj[charkey] = obj[charkey].trim();
+        }
+        if (this.options.normalize) {
+          obj[charkey] = obj[charkey].replace(/\s{2,}/g, " ").trim();
+        }
+        obj[charkey] = this.options.valueProcessors ? processValue(this.options.valueProcessors, obj[charkey], nodeName)
+          : obj[charkey];
         // also do away with '#' key altogether, if there's no subkeys
         // unless EXPLICIT_CHARKEY is set
         if ((Object.keys(obj).length === 1) && charkey in obj && !this.EXPLICIT_CHARKEY) {
@@ -199,8 +217,9 @@ exports.Parser = class Parser extends events.EventEmitter {
 
       if (this.options.validator != null) {
         const xpath = "/" + ((() => {
-          const result = [];
-          for (node of Array.from(stack)) {             result.push(node["#name"]);
+          const result: any = [];
+          for (node of stack) {
+            result.push(node["#name"]);
           }
           return result;
         })()).concat(nodeName).join("/");
@@ -208,7 +227,9 @@ exports.Parser = class Parser extends events.EventEmitter {
         // See https://github.com/Leonidas-from-XIV/node-xml2js/pull/369
         (() => {
           try {
-            return obj = this.options.validator(xpath, s && s[nodeName], obj);
+            if(this.options.validator) {
+              return obj = this.options.validator.validate(xpath, s && s[nodeName], obj);
+            }
           } catch (err) {
             return this.emit("error", err);
           }
@@ -277,12 +298,15 @@ exports.Parser = class Parser extends events.EventEmitter {
       if (s) {
         s[charkey] += text;
 
-        if (this.options.explicitChildren && this.options.preserveChildrenOrder && this.options.charsAsChildren && (this.options.includeWhiteChars || (text.replace(/\\n/g, '').trim() !== ''))) {
+        if (this.options.explicitChildren && this.options.preserveChildrenOrder && this.options.charsAsChildren
+          && (this.options.includeWhiteChars || (text.replace(/\\n/g, '').trim() !== ''))) {
           s[this.options.childkey] = s[this.options.childkey] || [];
           const charChild =
             {'#name': '__text__'};
           charChild[charkey] = text;
-          if (this.options.normalize) { charChild[charkey] = charChild[charkey].replace(/\s{2,}/g, " ").trim(); }
+          if (this.options.normalize) {
+            charChild[charkey] = charChild[charkey].replace(/\s{2,}/g, " ").trim();
+          }
           s[this.options.childkey].push(charChild);
         }
 
@@ -300,13 +324,14 @@ exports.Parser = class Parser extends events.EventEmitter {
   }
 
   parseString(str, cb) {
+    const self = this;
     if ((cb != null) && (typeof cb === "function")) {
-      this.on("end", function(result) {
-        this.reset();
+      this.on("end", function (result) {
+        self.reset();
         return cb(null, result);
       });
-      this.on("error", function(err) {
-        this.reset();
+      this.on("error", function (err) {
+        self.reset();
         return cb(err);
       });
     }
@@ -318,7 +343,7 @@ exports.Parser = class Parser extends events.EventEmitter {
         return true;
       }
 
-      str = bom.stripBOM(str);
+      str = stripBOM(str);
       if (this.options.async) {
         this.remaining = str;
         setImmediate(this.processAsync);
@@ -337,7 +362,7 @@ exports.Parser = class Parser extends events.EventEmitter {
   }
 };
 
-exports.parseString = function(str, a, b) {
+module.exports.parseString = function (str, a, b) {
   // let's determine what we got as arguments
   let cb, options;
   if (b != null) {

@@ -55,13 +55,6 @@
     "Lovell Fuller (http://lovell.info/)",
     "d3adc0d3 (https://github.com/d3adc0d3)"
   ],
-  "main": "./lib/xml2js",
-  "files": [
-    "lib"
-  ],
-  "directories": {
-    "lib": "./lib"
-  },
   "scripts": {
     "test": "zap",
     "coverage": "nyc npm test && nyc report",
@@ -72,7 +65,8 @@
     "url": "https://github.com/Leonidas-from-XIV/node-xml2js.git"
   },
   "dependencies": {
-    "sax": ">=0.6.0",
+    "@types/node": "^12.0.1",
+    "sax": ">=1.2.4",
     "xmlbuilder": "~10.0.0"
   },
   "devDependencies": {

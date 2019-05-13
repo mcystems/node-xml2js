@@ -13,7 +13,7 @@ const diff = require('diff');
 // fileName = path.join __dirname, '/fixtures/sample.xml'
 
 // shortcut, because it is quite verbose
-const equ = assert.equal;
+const equ = assert.strictEqual;
 
 // equality test with diff output
 const diffeq = function(expected, actual) {
