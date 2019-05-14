@@ -7,7 +7,7 @@ export interface ElementValueProcessor {
 }
 
 export interface ElementValidator {
-  validate(xpath: string, currentValue: string, newValue: string): string;
+  validate(xpath: string, currentValue: string, newValue: string): any;
 }
 
 export interface RenderOpts {
@@ -89,7 +89,7 @@ export const parserDefaults: ParserOption = {
   normalizeTags: false,
   attrkey: "$",
   charkey: "_",
-  explicitArray: false,
+  explicitArray: true,
   ignoreAttrs: false,
   mergeAttrs: false,
   explicitRoot: true,

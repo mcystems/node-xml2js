@@ -1,12 +1,3 @@
-/*
- * decaffeinate suggestions:
- * DS102: Remove unnecessary code created because of implicit returns
- * DS203: Remove `|| {}` from converted for-own loops
- * DS205: Consider reworking code to avoid use of IIFEs
- * DS207: Consider shorter variations of null checks
- * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
- */
-
 import * as sax from 'sax';
 import * as events from 'events';
 import {stripBOM} from './bom';
@@ -39,9 +30,8 @@ export class Parser extends events.EventEmitter {
   private resultObject: any;
   private EXPLICIT_CHARKEY: boolean;
 
-  constructor(opts: ParserOption) {
+  constructor(opts?: ParserOption) {
     super();
-    let key, value;
     this.processAsync = this.processAsync.bind(this);
     this.assignOrPush = this.assignOrPush.bind(this);
     this.reset = this.reset.bind(this);
@@ -49,12 +39,10 @@ export class Parser extends events.EventEmitter {
     if (!(this instanceof module.exports.Parser)) {
       return new exports.Parser(opts);
     }
-    // copy this versions default options
-    for (key of Object.keys(parserDefaults)) {
-      this.options[key] = parserDefaults[key];
-    }
+    this.options = {...parserDefaults};
     // overwrite them with the specified options, if any
-    for (key of Object.keys(opts || {})) {
+    for (let key of Object.keys(opts || {})) {
+      // @ts-ignore
       this.options[key] = opts[key];
     }
     // define the key used for namespaces
@@ -227,7 +215,7 @@ export class Parser extends events.EventEmitter {
         // See https://github.com/Leonidas-from-XIV/node-xml2js/pull/369
         (() => {
           try {
-            if(this.options.validator) {
+            if (this.options.validator) {
               return obj = this.options.validator.validate(xpath, s && s[nodeName], obj);
             }
           } catch (err) {
@@ -323,7 +311,7 @@ export class Parser extends events.EventEmitter {
     };
   }
 
-  parseString(str, cb) {
+  parseString(str, cb?: (err, result?) => void) {
     const self = this;
     if ((cb != null) && (typeof cb === "function")) {
       this.on("end", function (result) {
@@ -360,11 +348,12 @@ export class Parser extends events.EventEmitter {
       }
     }
   }
-};
+}
 
-module.exports.parseString = function (str, a, b) {
+export type Callback = (err: any, result: any) => void;
+export const parseString = function (str, a: ParserOption | Callback, b?: Callback) {
   // let's determine what we got as arguments
-  let cb, options;
+  let cb, options: ParserOption = parserDefaults;
   if (b != null) {
     if (typeof b === 'function') {
       cb = b;
@@ -377,11 +366,9 @@ module.exports.parseString = function (str, a, b) {
     if (typeof a === 'function') {
       cb = a;
     }
-    // and options should be empty - default
-    options = {};
   }
 
   // the rest is super-easy
-  const parser = new exports.Parser(options);
+  const parser = new Parser(options);
   return parser.parseString(str, cb);
 };

@@ -6,7 +6,7 @@ describe('BOM tests', () => {
     const demo = '\uFEFF<xml><foo>bar</foo></xml>';
     return parseString(demo, function (err, res) {
       expect(err).eq(null);
-      expect(res.xml.foo).equals('bar');
+      expect(res.xml.foo[0]).equals('bar');
     });
   });
 });
