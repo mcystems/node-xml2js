@@ -1,5 +1,7 @@
-node-xml2js
+node-xml2ts
 ===========
+
+This is a remixed version of the original work of node-xml2js. 
 
 Ever had the urge to parse XML? And wanted to access the data in some sane,
 easy way? Don't want to compile a C parser, for whatever reason? Then xml2js is
@@ -18,11 +20,8 @@ Note: If you're looking for a full DOM parser, you probably want
 Installation
 ============
 
-Simplest way to install `xml2js` is to use [npm](http://npmjs.org), just `npm
-install xml2js` which will download xml2js and all dependencies.
-
-xml2js is also available via [Bower](http://bower.io/), just `bower install
-xml2js` which will download xml2js and all dependencies.
+Simplest way to install `xml2ts` is to use [npm](http://npmjs.org), just `npm
+install xml2ts` which will download xml2js and all dependencies.
 
 Usage
 =====
