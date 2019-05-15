@@ -9,7 +9,7 @@ export class NormalizeProcessor implements ElementNameProcessor {
   }
 }
 
-export class FirstCharLowerCase implements ElementNameProcessor {
+export class FirstCharLowerCaseProcessor implements ElementNameProcessor {
   process(str: string): string {
     return str.charAt(0).toLowerCase() + str.slice(1);
   }

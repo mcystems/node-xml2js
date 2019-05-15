@@ -24,109 +24,90 @@ export interface XmlDecl {
 
 export interface BuilderOption {
   attrkey: string;
+  cdata: boolean
   charkey: string;
-  rootName: string;
-  renderOpts: RenderOpts;
-  xmldec: XmlDecl;
   doctype: any | null;
   headless: boolean;
-  /**
-   * Deprecated option: https://github.com/oozcitak/xmlbuilder-js/commit/1f9b41a7ef5bd3f0f03d57439392d572f0adc189
-   */
-  allowSurrogateChars?: boolean;
-  cdata: boolean
+  renderOpts: RenderOpts;
+  rootName: string;
+  xmldec: XmlDecl;
 }
 
 export interface ParserOption {
-  explicitCharkey: boolean;
-  trim: boolean;
-  // normalize implicates trimming; just so you know
-  normalize: boolean;
-  // normalize tag names to lower case
-  normalizeTags: boolean;
-  // set default attribute object key
-  attrkey: string;
-  // set default char object key
-  charkey: string;
-  // always put child nodes in an array
-  explicitArray: boolean;
-  // ignore all attributes regardless
-  ignoreAttrs: boolean;
-  // merge attributes and child elements onto parent object.  this may
-  // cause collisions.
-  mergeAttrs: boolean;
-  explicitRoot: boolean;
-  validator: ElementValidator | null;
-  xmlns: boolean;
-  // fold children elements into dedicated property (works only in 0.2)
-  explicitChildren: boolean;
-  childkey: string;
-  charsAsChildren: boolean;
-  preserveChildrenOrder: boolean;
-  // include white-space only text nodes
-  includeWhiteChars: boolean;
-  // callbacks are async? not in 0.1 mode
-  async: boolean;
-  strict: boolean;
-  rootName: string;
+  async: boolean;// callbacks are async?
+  attrkey: string; // set default attribute object key
   attrNameProcessors: ElementNameProcessor[];
   attrValueProcessors: ElementValueProcessor[];
-  tagNameProcessors: ElementNameProcessor[];
-  valueProcessors: ElementValueProcessor[];
-  emptyTag: string;
-  xmldec: XmlDecl;
-  doctype: object | null;
-  renderOpts: RenderOpts;
-  headless: boolean;
-  chunkSize: number;
   cdata: boolean;
+  charkey: string; // set default char object key
+  charsAsChildren: boolean;
+  childkey: string;
+  chunkSize: number;
+  doctype: object | null;
+  emptyTag: string;
+  explicitArray: boolean;// always put child nodes in an array
+  explicitCharkey: boolean;
+  explicitChildren: boolean;// fold children elements into dedicated property
+  explicitRoot: boolean;
+  headless: boolean;
+  ignoreAttrs: boolean;// ignore all attributes regardless
+  includeWhiteChars: boolean;// include white-space only text nodes
+  mergeAttrs: boolean;// merge attributes and child elements onto parent object.  this may cause collisions.
+  normalize: boolean; // normalize implicates trimming; just so you know
+  normalizeTags: boolean; // normalize tag names to lower case
+  preserveChildrenOrder: boolean;
+  renderOpts: RenderOpts;
+  rootName: string;
+  strict: boolean;
+  tagNameProcessors: ElementNameProcessor[];
+  trim: boolean;
+  validator: ElementValidator | null;
+  valueProcessors: ElementValueProcessor[];
+  xmldec: XmlDecl;
+  xmlns: boolean;
 }
 
 export const parserDefaults: ParserOption = {
-  explicitCharkey: false,
-  trim: false,
-  normalize: false,
-  normalizeTags: false,
+  async: false,  // not async in 0.2 mode either
   attrkey: "$",
-  charkey: "_",
-  explicitArray: true,
-  ignoreAttrs: false,
-  mergeAttrs: false,
-  explicitRoot: true,
-  validator: null,
-  xmlns: false,
-  explicitChildren: false,
-  preserveChildrenOrder: false,
-  childkey: '$$',
-  charsAsChildren: false,
-  // include white-space only text nodes
-  includeWhiteChars: false,
-  // not async in 0.2 mode either
-  async: false,
-  strict: true,
   attrNameProcessors: [],
   attrValueProcessors: [],
-  tagNameProcessors: [],
-  valueProcessors: [],
-  // xml building options
-  rootName: 'root',
-  xmldec: {'version': '1.0', 'encoding': 'UTF-8', 'standalone': true},
-  doctype: null,
-  renderOpts: {'pretty': true, 'indent': '  ', 'newline': '\n'},
-  headless: false,
+  cdata: false,
+  charkey: "_",
+  charsAsChildren: false,
+  childkey: '$$',
   chunkSize: 10000,
+  doctype: null,
   emptyTag: '',
-  cdata: false
+  explicitArray: true,
+  explicitCharkey: false,
+  explicitChildren: false,
+  explicitRoot: true,
+  headless: false,
+  ignoreAttrs: false,
+  includeWhiteChars: false,// include white-space only text nodes
+  mergeAttrs: false,
+  normalize: false,
+  normalizeTags: false,
+  preserveChildrenOrder: false,
+  renderOpts: {'pretty': true, 'indent': '  ', 'newline': '\n'},
+  rootName: 'root',  // xml building options
+  strict: true,
+  tagNameProcessors: [],
+  trim: false,
+  validator: null,
+  valueProcessors: [],
+  xmldec: {'version': '1.0', 'encoding': 'UTF-8', 'standalone': true},
+  xmlns: false,
 };
 
 export const builderDefaults: BuilderOption = {
-  allowSurrogateChars: false,
   attrkey: "$",
   cdata: false,
   charkey: "_",
   doctype: null,
   headless: false,
-  renderOpts: { 'pretty': true, 'indent': ' ', 'newline': '\n' },
+  renderOpts: {'pretty': true, 'indent': ' ', 'newline': '\n'},
   rootName: "root",
-  xmldec: { 'version': '1.0', 'encoding': 'UTF-8', 'standalone': true }
+  xmldec: {'version': '1.0', 'encoding': 'UTF-8', 'standalone': true}
 };
