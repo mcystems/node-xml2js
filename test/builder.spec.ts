@@ -7,6 +7,18 @@ import {parseString} from "../src/parser";
 
 // fileName = path.join __dirname, '/fixtures/sample.xml'
 
+async function readFile(path: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path, (err, data) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(data.toString());
+      }
+    });
+  });
+}
+
 describe('Builder tests', () => {
   it('test building basic XML structure', () => {
     const expected = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xml><Label/><MsgId>5850440872586764820</MsgId></xml>';
@@ -75,7 +87,6 @@ describe('Builder tests', () => {
 </xml>`;
     const opts = {...builderDefaults};
     opts.renderOpts = {pretty: true, indent: '    '};
-    opts.allowSurrogateChars = true;
     const builder = new Builder(opts);
     const obj = {"xml": {"MsgId": ["\uD83D\uDC33"]}};
     const actual = builder.buildObject(obj);
@@ -125,19 +136,13 @@ describe('Builder tests', () => {
 
   });
 
-  it('test parser -> builder roundtrip', () => {
+  it('test parser -> builder roundtrip', async () => {
     const fileName = path.join(__dirname, '/fixtures/build_sample.xml');
-    return fs.readFile(fileName, function (err, xmlData) {
-      const xmlExpected = xmlData.toString();
-      const parserOpts = {...parserDefaults};
-      parserOpts.trim = true;
-      return parseString(xmlData, parserOpts, function (err, obj) {
-        expect(err).to.equals(null);
-        const builder = new Builder(builderDefaults);
-        const xmlActual = builder.buildObject(obj);
-        expect(xmlExpected).to.equals(xmlActual);
-      });
-    });
+    const xmlExpected = await readFile(fileName);
+    const obj = await parseString(xmlExpected, {...parserDefaults, trim: true});
+    const builder = new Builder(builderDefaults);
+    const xmlActual = builder.buildObject(obj);
+    expect(xmlExpected).to.equals(xmlActual);
   });
 
   it('test building obj with undefined value', () => {

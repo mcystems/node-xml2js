@@ -1,9 +1,10 @@
 import * as sax from 'sax';
-import * as events from 'events';
+import {QualifiedTag, SAXParser, Tag} from 'sax';
 import {stripBOM} from './bom';
 import {NormalizeProcessor} from './processors';
-import {setImmediate} from 'timers';
 import {ElementNameProcessor, ElementValueProcessor, parserDefaults, ParserOption} from './defaults';
+import {CharacterPosition, XmlTsNode} from "./xmlTsNode";
+import {oc} from "ts-optchain";
 
 // Underscore has a nice function for this, but we try to go without dependencies
 const isEmpty = thing => (typeof thing === "object") && (thing != null) && (Object.keys(thing).length === 0);
@@ -22,24 +23,26 @@ const processName = function (processors: ElementNameProcessor[], item) {
   return item;
 };
 
-export class Parser extends events.EventEmitter {
-  private options: ParserOption;
-  readonly xmlnsKey: string;
-  private remaining: string;
-  private saxParser: any;
-  private resultObject: any;
-  private EXPLICIT_CHARKEY: boolean;
 
-  constructor(opts?: ParserOption) {
-    super();
-    this.processAsync = this.processAsync.bind(this);
+export class Parser {
+  readonly options: ParserOption;
+  readonly xmlnsKey: string;
+  private saxParser: SAXParser;
+  private resultObject: XmlTsNode | null;
+  private stack: Array<XmlTsNode>;
+  private resolve: (value?: (PromiseLike<XmlTsNode | null> | XmlTsNode | null)) => void;
+  private reject: (reason?: any) => void;
+
+  constructor(opts: ParserOption) {
     this.assignOrPush = this.assignOrPush.bind(this);
     this.reset = this.reset.bind(this);
     this.parseString = this.parseString.bind(this);
-    if (!(this instanceof module.exports.Parser)) {
-      return new exports.Parser(opts);
-    }
-    this.options = {...parserDefaults};
+    this.onText = this.onText.bind(this);
+    this.onOpenTag = this.onOpenTag.bind(this);
+    this.onCloseTag = this.onCloseTag.bind(this);
+    this.onText = this.onText.bind(this);
+
+    this.options = opts;
     // overwrite them with the specified options, if any
     for (let key of Object.keys(opts || {})) {
       // @ts-ignore
@@ -47,328 +50,209 @@ export class Parser extends events.EventEmitter {
     }
     // define the key used for namespaces
     if (this.options.xmlns) {
-      this.xmlnsKey = this.options.attrkey + "ns";
+      this.xmlnsKey = "$ns";
     }
     if (this.options.normalizeTags) {
       this.options.tagNameProcessors.unshift(new NormalizeProcessor());
     }
-
-    this.reset();
   }
 
-  processAsync() {
-    try {
-      let chunk;
-      if (this.remaining.length <= this.options.chunkSize) {
-        chunk = this.remaining;
-        this.remaining = '';
-        this.saxParser = this.saxParser.write(chunk);
-        return this.saxParser.close();
-      } else {
-        chunk = this.remaining.substr(0, this.options.chunkSize);
-        this.remaining = this.remaining.substr(this.options.chunkSize, this.remaining.length);
-        this.saxParser = this.saxParser.write(chunk);
-        return setImmediate(this.processAsync);
-      }
-    } catch (err) {
-      if (!this.saxParser.errThrown) {
-        this.saxParser.errThrown = true;
-        return this.emit(err);
-      }
+  private getBasicXmlTsNode(name: string, text?: string): XmlTsNode {
+    return {
+      name: name,
+      cdata: false,
+      pos: this.getActualPosition(),
+      _: text
     }
   }
 
-  assignOrPush(obj, key, newValue) {
-    if (!(key in obj)) {
-      if (!this.options.explicitArray) {
-        return obj[key] = newValue;
-      } else {
-        return obj[key] = [newValue];
-      }
-    } else {
+  /**
+   * Makes an attribute to a subnode
+   * @param obj Node of attribute
+   * @param key attribute key
+   * @param newValue attribute value
+   */
+  private assignOrPush(obj: XmlTsNode, key, newValue) {
+    if (key in obj) {
       if (!(obj[key] instanceof Array)) {
         obj[key] = [obj[key]];
       }
       return obj[key].push(newValue);
+    } else {
+      if (this.options.explicitArray) {
+        return obj[key] = [newValue];
+      } else {
+        return obj[key] = newValue;
+      }
     }
   }
 
-  reset() {
-    // remove all previous listeners for events, to prevent event listener accumulation
-    this.removeAllListeners();
+  getActualPosition(): CharacterPosition {
+    return {
+      line: this.saxParser.line,
+      column: this.saxParser.column,
+      pos: this.saxParser.position
+    }
+  }
+
+  private onOpenTag(node: Tag | QualifiedTag): number {
+    let obj: XmlTsNode = this.getBasicXmlTsNode('');
+    if (!this.options.ignoreAttrs) {
+      for (let key of Object.keys(node.attributes || {})) {
+        const newValue = this.options.attrValueProcessors
+          ? processValue(this.options.attrValueProcessors, node.attributes[key], key) : node.attributes[key];
+        const processedKey = this.options.attrNameProcessors
+          ? processName(this.options.attrNameProcessors, key) : key;
+        if (this.options.mergeAttrs) {
+          this.assignOrPush(obj, processedKey, newValue);
+        } else {
+          obj.$ = {...oc(obj).$({}), [processedKey]: newValue};
+        }
+      }
+    }
+
+    // need a place to store the node name
+    obj.name = this.options.tagNameProcessors
+      ? processName(this.options.tagNameProcessors, node.name) : node.name;
+    if (this.options.xmlns && (<QualifiedTag>node).uri) {
+      obj[this.xmlnsKey] = {uri: (<QualifiedTag>node).uri, local: (<QualifiedTag>node).local};
+    }
+    return this.stack.push(obj);
+  }
+
+  private onCloseTag(): void {
+    let cdata, emptyStr;
+    let current: XmlTsNode | undefined = this.stack.pop();
+    if (!current) {
+      throw new Error('close tab before open');
+    }
+    const nodeName = current.name;
+
+    const parent: XmlTsNode | undefined = this.stack[this.stack.length - 1];
+
+    // remove the '#' key altogether if it's blank
+    if (current._) {
+      if (current._.match(/^\s*$/) && !cdata) {
+        emptyStr = current._;
+        delete current._;
+      } else {
+        if (this.options.trim && current._) {
+          current._ = current._.trim();
+        }
+        if (this.options.normalize) {
+          current._ = current._.replace(/\s{2,}/g, " ").trim();
+        }
+        current._ = this.options.valueProcessors ? processValue(this.options.valueProcessors, current._,
+          nodeName) : current._;
+      }
+    }
+
+    if (isEmpty(current)) {
+      current = this.options.emptyTag !== '' ? this.options.emptyTag : emptyStr;
+    }
+
+    if (this.options.validator != null) {
+      const xpath = `/${this.stack.map(n => n.name).concat(nodeName).join('/')}`;
+      if (this.options.validator && current) {
+        current = this.options.validator.validate(xpath, parent && (<XmlTsNode>parent[nodeName]), current);
+      }
+    }
+
+    // put children into <childkey> property and unfold chars if necessary
+    if (parent) {
+      parent.$$ = parent.$$ || [];
+      const clone: XmlTsNode = JSON.parse(JSON.stringify(current));
+      parent.$$.push(clone);
+    }
+
+    // check whether we closed all the open tags
+    if (this.stack.length > 0) {
+      this.assignOrPush(parent, nodeName, current);
+    } else {
+      // if explicitRoot was specified, wrap stuff in the root tag name
+      if (this.options.explicitRoot && current) {
+        // avoid circular references
+        const old: XmlTsNode = current;
+        current = {[nodeName]: old, name: nodeName, cdata: false, pos: {line: 0, column: 0, pos: 0}, $$: [old]};
+      }
+      if (current) {
+        this.resultObject = current;
+      }
+    }
+  }
+
+  private onText(text: string): XmlTsNode | null {
+    const s = this.stack[this.stack.length - 1];
+    if (s) {
+      s._ = s._ ? s._ + text : text;
+      if (this.options.explicitChildren && this.options.preserveChildrenOrder && this.options.charsAsChildren
+        && (this.options.includeWhiteChars || (text.replace(/\\n/g, '').trim() !== ''))) {
+        s.$$ = s.$$ || [];
+        const charChild: XmlTsNode = this.getBasicXmlTsNode('__text__',
+          this.options.normalize ? text.replace(/\s{2,}/g, " ").trim() : text);
+        s.$$.push(charChild);
+      }
+    }
+    return s;
+  }
+
+  /**
+   * Reset and setup sax parser
+   */
+  private reset() {
     // make the SAX parser. tried trim and normalize, but they are not very helpful
     this.saxParser = sax.parser(this.options.strict, {
       trim: false,
       normalize: false,
-      xmlns: this.options.xmlns
+      xmlns: this.options.xmlns,
+      position: true
     });
 
-    // emit one error event if the sax parser fails. this is mostly a hack, but
-    // the sax parser isn't state of the art either.
-    this.saxParser.errThrown = false;
-    this.saxParser.onerror = error => {
-      this.saxParser.resume();
-      if (!this.saxParser.errThrown) {
-        this.saxParser.errThrown = true;
-        return this.emit("error", error);
-      }
+    this.saxParser.onerror = (error: Error) => {
+      this.reject(error);
     };
 
-    this.saxParser.onend = () => {
-      if (!this.saxParser.ended) {
-        this.saxParser.ended = true;
-        return this.emit("end", this.resultObject);
-      }
-    };
-
-    // another hack to avoid throwing exceptions when the parsing has ended
-    // but the user-supplied callback throws an error
-    this.saxParser.ended = false;
-
-    // always use the '#' key, even if there are no subkeys
-    // setting this property by and is deprecated, yet still supported.
-    // better pass it as explicitCharkey option to the constructor
-    this.EXPLICIT_CHARKEY = this.options.explicitCharkey;
     this.resultObject = null;
-    const stack: any[] = [];
-    // aliases, so we don't have to type so much
-    const {attrkey} = this.options;
-    const {charkey} = this.options;
-
-    this.saxParser.onopentag = node => {
-      const obj: any = {};
-      obj[charkey] = "";
-      if (!this.options.ignoreAttrs) {
-        for (let key of Object.keys(node.attributes || {})) {
-          if (!(attrkey in obj) && !this.options.mergeAttrs) {
-            obj[attrkey] = {};
-          }
-          const newValue = this.options.attrValueProcessors
-            ? processValue(this.options.attrValueProcessors, node.attributes[key], key) : node.attributes[key];
-          const processedKey = this.options.attrNameProcessors
-            ? processName(this.options.attrNameProcessors, key) : key;
-          if (this.options.mergeAttrs) {
-            this.assignOrPush(obj, processedKey, newValue);
-          } else {
-            obj[attrkey][processedKey] = newValue;
-          }
-        }
-      }
-
-      // need a place to store the node name
-      obj["#name"] = this.options.tagNameProcessors
-        ? processName(this.options.tagNameProcessors, node.name) : node.name;
-      if (this.options.xmlns) {
-        obj[this.xmlnsKey] = {uri: node.uri, local: node.local};
-      }
-      return stack.push(obj);
+    this.saxParser.onopentag = this.onOpenTag;
+    this.saxParser.onclosetag = this.onCloseTag;
+    this.saxParser.onend = () => {
+      this.resolve(this.resultObject);
     };
 
-    this.saxParser.onclosetag = () => {
-      let cdata, emptyStr;
-      let node;
-      let obj = stack.pop();
-      const nodeName = obj["#name"];
-      if (!this.options.explicitChildren || !this.options.preserveChildrenOrder) {
-        delete obj["#name"];
-      }
-
-      if (obj.cdata === true) {
-        ({cdata} = obj);
-        delete obj.cdata;
-      }
-
-      const s = stack[stack.length - 1];
-      // remove the '#' key altogether if it's blank
-      if (obj[charkey].match(/^\s*$/) && !cdata) {
-        emptyStr = obj[charkey];
-        delete obj[charkey];
-      } else {
-        if (this.options.trim) {
-          obj[charkey] = obj[charkey].trim();
-        }
-        if (this.options.normalize) {
-          obj[charkey] = obj[charkey].replace(/\s{2,}/g, " ").trim();
-        }
-        obj[charkey] = this.options.valueProcessors ? processValue(this.options.valueProcessors, obj[charkey], nodeName)
-          : obj[charkey];
-        // also do away with '#' key altogether, if there's no subkeys
-        // unless EXPLICIT_CHARKEY is set
-        if ((Object.keys(obj).length === 1) && charkey in obj && !this.EXPLICIT_CHARKEY) {
-          obj = obj[charkey];
-        }
-      }
-
-      if (isEmpty(obj)) {
-        obj = this.options.emptyTag !== '' ? this.options.emptyTag : emptyStr;
-      }
-
-      if (this.options.validator != null) {
-        const xpath = "/" + ((() => {
-          const result: any = [];
-          for (node of stack) {
-            result.push(node["#name"]);
-          }
-          return result;
-        })()).concat(nodeName).join("/");
-        // Wrap try/catch with an inner function to allow V8 to optimise the containing function
-        // See https://github.com/Leonidas-from-XIV/node-xml2js/pull/369
-        (() => {
-          try {
-            if (this.options.validator) {
-              return obj = this.options.validator.validate(xpath, s && s[nodeName], obj);
-            }
-          } catch (err) {
-            return this.emit("error", err);
-          }
-        })();
-      }
-
-      // put children into <childkey> property and unfold chars if necessary
-      if (this.options.explicitChildren && !this.options.mergeAttrs && (typeof obj === 'object')) {
-        if (!this.options.preserveChildrenOrder) {
-          node = {};
-          // separate attributes
-          if (this.options.attrkey in obj) {
-            node[this.options.attrkey] = obj[this.options.attrkey];
-            delete obj[this.options.attrkey];
-          }
-          // separate char data
-          if (!this.options.charsAsChildren && this.options.charkey in obj) {
-            node[this.options.charkey] = obj[this.options.charkey];
-            delete obj[this.options.charkey];
-          }
-
-          if (Object.getOwnPropertyNames(obj).length > 0) {
-            node[this.options.childkey] = obj;
-          }
-
-          obj = node;
-        } else if (s) {
-          // append current node onto parent's <childKey> array
-          s[this.options.childkey] = s[this.options.childkey] || [];
-          // push a clone so that the node in the children array can receive the #name property while the original obj can do without it
-          const objClone = {};
-          for (let key of Object.keys(obj || {})) {
-            objClone[key] = obj[key];
-          }
-          s[this.options.childkey].push(objClone);
-          delete obj["#name"];
-          // re-check whether we can collapse the node now to just the charkey value
-          if ((Object.keys(obj).length === 1) && charkey in obj && !this.EXPLICIT_CHARKEY) {
-            obj = obj[charkey];
-          }
-        }
-      }
-
-      // check whether we closed all the open tags
-      if (stack.length > 0) {
-        return this.assignOrPush(s, nodeName, obj);
-      } else {
-        // if explicitRoot was specified, wrap stuff in the root tag name
-        if (this.options.explicitRoot) {
-          // avoid circular references
-          const old = obj;
-          obj = {};
-          obj[nodeName] = old;
-        }
-
-        this.resultObject = obj;
-        // parsing has ended, mark that so we won't throw exceptions from
-        // here anymore
-        this.saxParser.ended = true;
-        return this.emit("end", this.resultObject);
-      }
-    };
-
-    const ontext = text => {
-      const s = stack[stack.length - 1];
-      if (s) {
-        s[charkey] += text;
-
-        if (this.options.explicitChildren && this.options.preserveChildrenOrder && this.options.charsAsChildren
-          && (this.options.includeWhiteChars || (text.replace(/\\n/g, '').trim() !== ''))) {
-          s[this.options.childkey] = s[this.options.childkey] || [];
-          const charChild =
-            {'#name': '__text__'};
-          charChild[charkey] = text;
-          if (this.options.normalize) {
-            charChild[charkey] = charChild[charkey].replace(/\s{2,}/g, " ").trim();
-          }
-          s[this.options.childkey].push(charChild);
-        }
-
-        return s;
-      }
-    };
-
-    this.saxParser.ontext = ontext;
+    this.saxParser.ontext = this.onText;
     return this.saxParser.oncdata = text => {
-      const s = ontext(text);
+      const s = this.onText(text);
       if (s) {
         return s.cdata = true;
       }
     };
   }
 
-  parseString(str, cb?: (err, result?) => void) {
-    const self = this;
-    if ((cb != null) && (typeof cb === "function")) {
-      this.on("end", function (result) {
-        self.reset();
-        return cb(null, result);
-      });
-      this.on("error", function (err) {
-        self.reset();
-        return cb(err);
-      });
-    }
+  async parseString(str: string): Promise<XmlTsNode | null> {
+    return new Promise<XmlTsNode | null>(
+      (resolve, reject) => {
+        this.resolve = resolve;
+        this.reject = reject;
+        try {
+          this.reset();
+          this.stack = [];
 
-    try {
-      str = str.toString();
-      if (str.trim() === '') {
-        this.emit("end", null);
-        return true;
-      }
+          str = str.toString();
+          if (str.trim() === '') {
+            resolve(null);
+          }
 
-      str = stripBOM(str);
-      if (this.options.async) {
-        this.remaining = str;
-        setImmediate(this.processAsync);
-        return this.saxParser;
+          str = stripBOM(str);
+          this.saxParser.write(str).close();
+        } catch (error) {
+          reject(error);
+        }
       }
-      return this.saxParser.write(str).close();
-    } catch (error) {
-      const err = error;
-      if (!this.saxParser.errThrown && !this.saxParser.ended) {
-        this.emit('error', err);
-        return this.saxParser.errThrown = true;
-      } else if (this.saxParser.ended) {
-        throw err;
-      }
-    }
+    );
   }
 }
 
-export type Callback = (err: any, result: any) => void;
-export const parseString = function (str, a: ParserOption | Callback, b?: Callback) {
-  // let's determine what we got as arguments
-  let cb, options: ParserOption = parserDefaults;
-  if (b != null) {
-    if (typeof b === 'function') {
-      cb = b;
-    }
-    if (typeof a === 'object') {
-      options = a;
-    }
-  } else {
-    // well, b is not set, so a has to be a callback
-    if (typeof a === 'function') {
-      cb = a;
-    }
-  }
-
-  // the rest is super-easy
-  const parser = new Parser(options);
-  return parser.parseString(str, cb);
+export const parseString = async function (str: string, opts?: ParserOption) {
+  const parser = new Parser(opts ? {...parserDefaults, ...opts} : parserDefaults);
+  return await parser.parseString(str);
 };

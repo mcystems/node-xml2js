@@ -1,3 +1,5 @@
+import {XmlTsNode} from "./xmlTsNode";
+
 export interface ElementNameProcessor {
   process(name: string): string;
 }
@@ -7,7 +9,7 @@ export interface ElementValueProcessor {
 }
 
 export interface ElementValidator {
-  validate(xpath: string, currentValue: string, newValue: string): any;
+  validate(xpath: string, currentValue: string | XmlTsNode, newValue: string | XmlTsNode): any;
 }
 
 export interface RenderOpts {
@@ -34,17 +36,12 @@ export interface BuilderOption {
 }
 
 export interface ParserOption {
-  async: boolean;// callbacks are async?
-  attrkey: string; // set default attribute object key
   attrNameProcessors: ElementNameProcessor[];
   attrValueProcessors: ElementValueProcessor[];
   cdata: boolean;
-  charkey: string; // set default char object key
   charsAsChildren: boolean;
-  childkey: string;
-  chunkSize: number;
   doctype: object | null;
-  emptyTag: string;
+  emptyTag: string | null;
   explicitArray: boolean;// always put child nodes in an array
   explicitCharkey: boolean;
   explicitChildren: boolean;// fold children elements into dedicated property
@@ -68,15 +65,10 @@ export interface ParserOption {
 }
 
 export const parserDefaults: ParserOption = {
-  async: false,  // not async in 0.2 mode either
-  attrkey: "$",
   attrNameProcessors: [],
   attrValueProcessors: [],
   cdata: false,
-  charkey: "_",
   charsAsChildren: false,
-  childkey: '$$',
-  chunkSize: 10000,
   doctype: null,
   emptyTag: '',
   explicitArray: true,

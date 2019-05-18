@@ -3,6 +3,7 @@ import {FirstCharLowerCaseProcessor, NormalizeProcessor} from '../src/processors
 import {parseString} from "../src/parser";
 import {ElementValueProcessor, parserDefaults} from "../src/defaults";
 import {expect} from 'chai';
+import {oc} from "ts-optchain";
 
 const parseNumbersExceptAccount: ElementValueProcessor = {
   process(value: string, name: string): string {
@@ -58,21 +59,19 @@ describe('processors tests', () => {
     expect(processors.parseBooleans('')).to.equals('');
   });
 
-  it('test a processor that filters by node name', () => {
+  it('test a processor that filters by node name', async () => {
     const xml = '<account><accountNumber>0012345</accountNumber><balance>123.45</balance></account>';
     const options = {...parserDefaults, valueProcessors: [parseNumbersExceptAccount], explicitArray: false};
-    return parseString(xml, options, function (err, parsed) {
-      expect(parsed.account.accountNumber).to.deep.equal('0012345');
-      expect(parsed.account.balance).to.equals(123.45);
-    });
+    const parsed = await parseString(xml, options);
+    expect(oc(parsed).account.accountNumber).to.deep.equal('0012345');
+    expect(oc(parsed).account.balance).to.equals(123.45);
   });
 
-  it('test a processor that filters by attr name', () => {
+  it('test a processor that filters by attr name', async () => {
     const xml = '<account accountNumber="0012345" balance="123.45" />';
     const options = {...parserDefaults, attrValueProcessors: [parseNumbersExceptAccount]};
-    return parseString(xml, options, function (err, parsed) {
-      expect(parsed.account.$.accountNumber).to.equals('0012345');
-      expect(parsed.account.$.balance).to.equals(123.45);
-    });
+    const parsed = await parseString(xml, options);
+    expect(oc(parsed).account.$.accountNumber).to.equals('0012345');
+    expect(oc(parsed).account.$.balance).to.equals(123.45);
   });
 });
