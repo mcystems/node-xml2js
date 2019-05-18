@@ -45,7 +45,6 @@ export interface ParserOption {
   explicitArray: boolean;// always put child nodes in an array
   explicitCharkey: boolean;
   explicitChildren: boolean;// fold children elements into dedicated property
-  explicitRoot: boolean;
   headless: boolean;
   ignoreAttrs: boolean;// ignore all attributes regardless
   includeWhiteChars: boolean;// include white-space only text nodes
@@ -74,7 +73,6 @@ export const parserDefaults: ParserOption = {
   explicitArray: true,
   explicitCharkey: false,
   explicitChildren: false,
-  explicitRoot: true,
   headless: false,
   ignoreAttrs: false,
   includeWhiteChars: false,// include white-space only text nodes

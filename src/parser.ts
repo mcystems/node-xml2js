@@ -169,12 +169,6 @@ export class Parser {
     if (this.stack.length > 0) {
       this.assignOrPush(parent, nodeName, current);
     } else {
-      // if explicitRoot was specified, wrap stuff in the root tag name
-      if (this.options.explicitRoot && current) {
-        // avoid circular references
-        const old: XmlTsNode = current;
-        current = {[nodeName]: old, name: nodeName, cdata: false, pos: {line: 0, column: 0, pos: 0}, $$: [old]};
-      }
       if (current) {
         this.resultObject = current;
       }
