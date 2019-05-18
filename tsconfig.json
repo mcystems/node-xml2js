@@ -7,7 +7,12 @@
     "strictNullChecks": true,
     "declaration": true,
     "pretty": true,
-    "outDir": "build"
+    "outDir": "build",
+    "plugins": [
+      {
+        "transform": "ts-optchain/transform"
+      }
+    ]
   },
   "exclude": [
     "node_modules"

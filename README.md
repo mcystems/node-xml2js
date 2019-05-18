@@ -1,7 +1,7 @@
 node-xml2ts
 ===========
 
-This is a remixed version of the original work of node-xml2js. 
+This is a remixed version of the original work of Marek Kubica's node-xml2js. 
 
 Ever had the urge to parse XML? And wanted to access the data in some sane,
 easy way? Don't want to compile a C parser, for whatever reason? Then xml2js is
@@ -126,7 +126,7 @@ Displaying results
 
 You might wonder why, using `console.dir` or `console.log` the output at some
 level is only `[Object]`. Don't worry, this is not because `xml2js` got lazy.
-That's because Node uses `util.inspect` to convert the object into strings and
+That's because XmlTsNode uses `util.inspect` to convert the object into strings and
 that function stops after `depth=2` which is a bit low for most XML.
 
 To display the whole deal, you can use `console.log(util.inspect(result, false,

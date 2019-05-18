@@ -5,10 +5,10 @@
     "xml",
     "json"
   ],
-  "homepage": "https://github.com/mcystems/node-xml2js",
-  "version": "1",
-  "author": "",
-  "contributors": [ ],
+  "homepage": "https://github.com/mcystems/node-xml2ts",
+  "version": "1.0",
+  "author": "Mádai, Csaba",
+  "contributors": [],
   "scripts": {
     "coverage": "nyc npm test && nyc report",
     "coveralls": "nyc npm test && nyc report --reporter=text-lcov | coveralls"
@@ -18,28 +18,30 @@
     "url": "https://github.com/mcystems/xml2ts.git"
   },
   "dependencies": {
-    "@types/node": "^12.0.1",
     "sax": ">=1.2.4",
-    "ts-node": "^8.1.0",
-    "typescript": "^3.4.5",
     "xmlbuilder": "~13.0.1"
   },
   "devDependencies": {
     "@types/chai": "^4.1.7",
     "@types/mocha": "^5.2.6",
+    "@types/node": "^12.0.1",
+    "@types/sax": "^1.0.1",
     "chai": "^4.2.0",
     "coveralls": "^3.0.1",
     "diff": ">=1.0.8",
     "docco": ">=0.6.2",
     "mocha": "^6.1.4",
-    "nyc": ">=2.2.1"
+    "nyc": ">=2.2.1",
+    "ts-optchain": "^0.1.7",
+    "ts-node": "^8.1.0",
+    "typescript": "^3.4.5"
   },
   "engines": {
     "node": ">=4.0.0"
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Leonidas-from-XIV/node-xml2js/issues"
+    "url": "https://github.com/mcystems/xml2ts/issues"
   },
   "main": "index.js",
   "directories": {
