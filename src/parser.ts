@@ -32,6 +32,7 @@ export class Parser {
   private stack: Array<XmlTsNode>;
   private resolve: (value?: (PromiseLike<XmlTsNode | null> | XmlTsNode | null)) => void;
   private reject: (reason?: any) => void;
+  readonly tagnameProcessors: Array<ElementNameProcessor> = [];
 
   constructor(opts: ParserOption) {
     this.assignOrPush = this.assignOrPush.bind(this);
@@ -53,17 +54,21 @@ export class Parser {
       this.xmlnsKey = "$ns";
     }
     if (this.options.normalizeTags) {
-      this.options.tagNameProcessors.unshift(new NormalizeProcessor());
+      this.tagnameProcessors.unshift(new NormalizeProcessor());
+      // this.options.tagNameProcessors.unshift(new NormalizeProcessor());
     }
   }
 
   private getBasicXmlTsNode(name: string, text?: string): XmlTsNode {
-    return {
+    const node: XmlTsNode = {
       name: name,
       cdata: false,
-      pos: this.getActualPosition(),
-      _: text
+      pos: this.getActualPosition()
+    };
+    if (text !== undefined && text !== null) {
+      node._ = text;
     }
+    return node;
   }
 
   /**
@@ -112,8 +117,8 @@ export class Parser {
     }
 
     // need a place to store the node name
-    obj.name = this.options.tagNameProcessors
-      ? processName(this.options.tagNameProcessors, node.name) : node.name;
+    obj.name = this.tagnameProcessors
+      ? processName(this.tagnameProcessors, node.name) : node.name;
     if (this.options.xmlns && (<QualifiedTag>node).uri) {
       obj[this.xmlnsKey] = {uri: (<QualifiedTag>node).uri, local: (<QualifiedTag>node).local};
     }
@@ -130,11 +135,13 @@ export class Parser {
 
     const parent: XmlTsNode | undefined = this.stack[this.stack.length - 1];
 
-    // remove the '#' key altogether if it's blank
     if (current._) {
       if (current._.match(/^\s*$/) && !cdata) {
-        emptyStr = current._;
-        delete current._;
+        current._ = this.options.emptyTag != '' ? this.options.emptyTag : current._;
+        // if() {
+        //   then @options.emptyTag else emptyStr
+        // }
+        // delete current._;
       } else {
         if (this.options.trim && current._) {
           current._ = current._.trim();
@@ -145,10 +152,6 @@ export class Parser {
         current._ = this.options.valueProcessors ? processValue(this.options.valueProcessors, current._,
           nodeName) : current._;
       }
-    }
-
-    if (isEmpty(current)) {
-      current = this.options.emptyTag !== '' ? this.options.emptyTag : emptyStr;
     }
 
     if (this.options.validator != null) {
@@ -163,6 +166,13 @@ export class Parser {
       parent.$$ = parent.$$ || [];
       const clone: XmlTsNode = JSON.parse(JSON.stringify(current));
       parent.$$.push(clone);
+    } else {
+      // if explicitRoot was specified, wrap stuff in the root tag name
+      if (this.options.explicitRoot && current) {
+        // avoid circular references
+        const old: XmlTsNode = current;
+        current = {[nodeName]: old, name: '__logical_root__', cdata: false, pos: {line: 0, column: 0, pos: 0}};
+      }
     }
 
     // check whether we closed all the open tags
