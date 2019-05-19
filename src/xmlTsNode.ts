@@ -10,7 +10,6 @@ export interface CharacterPosition {
 
 export interface XmlTsNode {
   name: string;
-  cdata: boolean;
   _?: string;
   $?: Attribute;
   $$?: Array<XmlTsNode>;

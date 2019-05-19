@@ -32,7 +32,7 @@ export class Parser {
   private stack: Array<XmlTsNode>;
   private resolve: (value?: (PromiseLike<XmlTsNode | null> | XmlTsNode | null)) => void;
   private reject: (reason?: any) => void;
-  readonly tagnameProcessors: Array<ElementNameProcessor> = [];
+  readonly tagNameProcessors: Array<ElementNameProcessor> = [];
 
   constructor(opts: ParserOption) {
     this.assignOrPush = this.assignOrPush.bind(this);
@@ -54,15 +54,17 @@ export class Parser {
       this.xmlnsKey = "$ns";
     }
     if (this.options.normalizeTags) {
-      this.tagnameProcessors.unshift(new NormalizeProcessor());
+      this.tagNameProcessors.unshift(new NormalizeProcessor());
       // this.options.tagNameProcessors.unshift(new NormalizeProcessor());
+    }
+    if(this.options.tagNameProcessors) {
+      this.tagNameProcessors.push(...this.options.tagNameProcessors);
     }
   }
 
   private getBasicXmlTsNode(name: string, text?: string): XmlTsNode {
     const node: XmlTsNode = {
       name: name,
-      cdata: false,
       pos: this.getActualPosition()
     };
     if (text !== undefined && text !== null) {
@@ -117,8 +119,8 @@ export class Parser {
     }
 
     // need a place to store the node name
-    obj.name = this.tagnameProcessors
-      ? processName(this.tagnameProcessors, node.name) : node.name;
+    obj.name = this.tagNameProcessors
+      ? processName(this.tagNameProcessors, node.name) : node.name;
     if (this.options.xmlns && (<QualifiedTag>node).uri) {
       obj[this.xmlnsKey] = {uri: (<QualifiedTag>node).uri, local: (<QualifiedTag>node).local};
     }
@@ -126,7 +128,6 @@ export class Parser {
   }
 
   private onCloseTag(): void {
-    let cdata, emptyStr;
     let current: XmlTsNode | undefined = this.stack.pop();
     if (!current) {
       throw new Error('close tab before open');
@@ -136,12 +137,8 @@ export class Parser {
     const parent: XmlTsNode | undefined = this.stack[this.stack.length - 1];
 
     if (current._) {
-      if (current._.match(/^\s*$/) && !cdata) {
+      if (current._.match(/^\s*$/) && !current.cdata) {
         current._ = this.options.emptyTag != '' ? this.options.emptyTag : current._;
-        // if() {
-        //   then @options.emptyTag else emptyStr
-        // }
-        // delete current._;
       } else {
         if (this.options.trim && current._) {
           current._ = current._.trim();
@@ -171,7 +168,7 @@ export class Parser {
       if (this.options.explicitRoot && current) {
         // avoid circular references
         const old: XmlTsNode = current;
-        current = {[nodeName]: old, name: '__logical_root__', cdata: false, pos: {line: 0, column: 0, pos: 0}};
+        current = {[nodeName]: old, name: '__logical_root__', pos: {line: 0, column: 0, pos: 0}};
       }
     }
 

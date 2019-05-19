@@ -324,7 +324,6 @@ describe('parser tests', () => {
     const r = await skeleton({...parserDefaults});
     expect(oc(r).sample.emptytest[0]()).to.deep.equals({
       name: 'emptytest',
-      cdata: false,
       "pos": {
         "column": 16,
         "line": 27,
@@ -478,7 +477,7 @@ describe('parser tests', () => {
   it('test empty CDATA', async () => {
     const xml = '<xml><Label><![CDATA[]]></Label><MsgId>5850440872586764820</MsgId></xml>';
     const r = await parseString(xml);
-    expect(oc(r).xml.Label[0]().cdata).to.equals(false);
+    expect(oc(r).xml.Label[0]._()).to.equals(undefined);
   });
 
   it('test CDATA whitespaces result', async () => {
