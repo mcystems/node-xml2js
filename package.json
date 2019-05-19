@@ -6,7 +6,7 @@
     "json"
   ],
   "homepage": "https://github.com/mcystems/node-xml2ts",
-  "version": "1.0",
+  "version": "0.5.0",
   "author": "Mádai, Csaba",
   "contributors": [],
   "scripts": {
