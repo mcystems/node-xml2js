@@ -1,21 +1,37 @@
-node-xml2ts
+xml2ts
 ===========
 
-This is a remixed version of the original work of Marek Kubica's node-xml2js. 
+This is a remixed version of the original work of Marek Kubica's [node-xml2js](https://github.com/Leonidas-from-XIV/node-xml2js).
 
-Ever had the urge to parse XML? And wanted to access the data in some sane,
-easy way? Don't want to compile a C parser, for whatever reason? Then xml2js is
-what you're looking for!
+####Differences between this and the original version
+* Complete rewrite in typescript.
+* Some features removed because of the increased strictness of being type safe.
+* Some features or behaviours altered.
+* Introduced **XmlTsNode** as resulting object.
+* Typed configuration object
+* Typed validators and processors
+* Position tracking. You always know the actual node position within the original xml.
+* Tests are rewrote to a more standard Mocha and Chai.
+
+*Documentation and the builder side is still in progress. The parsing side is done* 
 
 Description
 ===========
 
-Simple XML to JavaScript object converter. It supports bi-directional conversion.
+Simple XML to JavaScript object converter.
 Uses [sax-js](https://github.com/isaacs/sax-js/) and
 [xmlbuilder-js](https://github.com/oozcitak/xmlbuilder-js/).
 
 Note: If you're looking for a full DOM parser, you probably want
 [JSDom](https://github.com/tmpvar/jsdom).
+
+This version is somewhat rewrote to typescript. Introduced XmlTsNode as the resulting object. 
+Position of each node are  
+
+Ever had the urge to parse XML? And wanted to access the data in some sane,
+easy way? Don't want to compile a C parser, for whatever reason? Then xml2js is
+what you're looking for!
+
 
 Installation
 ============
@@ -35,30 +51,18 @@ Shoot-and-forget usage
 You want to parse XML as simple and easy as possible? It's dangerous to go
 alone, take this:
 
-```javascript
-var parseString = require('xml2js').parseString;
+```typescript
+import {parseString} from 'xml2ts';
 var xml = "<root>Hello xml2js!</root>"
-parseString(xml, function (err, result) {
-    console.dir(result);
-});
+const result = await parseString(xml);
 ```
 
-Can't get easier than this, right? This works starting with `xml2js` 0.2.3.
-With CoffeeScript it looks like this:
-
-```coffeescript
-{parseString} = require 'xml2js'
-xml = "<root>Hello xml2js!</root>"
-parseString xml, (err, result) ->
-    console.dir result
-```
-
-If you need some special options, fear not, `xml2js` supports a number of
+If you need some special options, fear not, `xml2ts` supports a number of
 options (see below), you can specify these as second argument:
 
-```javascript
-parseString(xml, {trim: true}, function (err, result) {
-});
+```typescript
+import {parseString} from 'xml2ts';
+parseString(xml, {trim: true});
 ```
 
 Simple as pie usage
@@ -67,41 +71,15 @@ Simple as pie usage
 That's right, if you have been using xml-simple or a home-grown
 wrapper, this was added in 0.1.11 just for you:
 
-```javascript
-var fs = require('fs'),
-    xml2js = require('xml2js');
+```typescript
+import * as fs = from 'fs';
+import {Parser, parserDefaults, XmlTsNode} from 'xml2ts';
 
-var parser = new xml2js.Parser();
-fs.readFile(__dirname + '/foo.xml', function(err, data) {
-    parser.parseString(data, function (err, result) {
-        console.dir(result);
-        console.log('Done');
-    });
-});
+async function f(xml: string): Promise<XmlTsNode> {
+  const parser = new Parser(parserDefaults);
+  return await parser.parseString(xml);
+}
 ```
-
-Look ma, no event listeners!
-
-You can also use `xml2js` from
-[CoffeeScript](https://github.com/jashkenas/coffeescript), further reducing
-the clutter:
-
-```coffeescript
-fs = require 'fs',
-xml2js = require 'xml2js'
-
-parser = new xml2js.Parser()
-fs.readFile __dirname + '/foo.xml', (err, data) ->
-  parser.parseString data, (err, result) ->
-    console.dir result
-    console.log 'Done.'
-```
-
-But what happens if you forget the `new` keyword to create a new `Parser`? In
-the middle of a nightly coding session, it might get lost, after all. Worry
-not, we got you covered! Starting with 0.2.8 you can also leave it out, in
-which case `xml2js` will helpfully add it for you, no bad surprises and
-inexplicable bugs!
 
 Parsing multiple files
 ----------------------
@@ -110,63 +88,13 @@ If you want to parse multiple files, you have multiple possibilities:
 
   * You can create one `xml2js.Parser` per file. That's the recommended one
     and is promised to always *just work*.
-  * You can call `reset()` on your parser object.
-  * You can hope everything goes well anyway. This behaviour is not
-    guaranteed work always, if ever. Use option #1 if possible. Thanks!
-
+  
 So you wanna some JSON?
 -----------------------
 
 Just wrap the `result` object in a call to `JSON.stringify` like this
 `JSON.stringify(result)`. You get a string containing the JSON representation
 of the parsed object that you can feed to JSON-hungry consumers.
-
-Displaying results
-------------------
-
-You might wonder why, using `console.dir` or `console.log` the output at some
-level is only `[Object]`. Don't worry, this is not because `xml2js` got lazy.
-That's because XmlTsNode uses `util.inspect` to convert the object into strings and
-that function stops after `depth=2` which is a bit low for most XML.
-
-To display the whole deal, you can use `console.log(util.inspect(result, false,
-null))`, which displays the whole result.
-
-So much for that, but what if you use
-[eyes](https://github.com/cloudhead/eyes.js) for nice colored output and it
-truncates the output with `…`? Don't fear, there's also a solution for that,
-you just need to increase the `maxLength` limit by creating a custom inspector
-`var inspect = require('eyes').inspector({maxLength: false})` and then you can
-easily `inspect(result)`.
-
-XML builder usage
------------------
-
-Since 0.4.0, objects can be also be used to build XML:
-
-```javascript
-var xml2js = require('xml2js');
-
-var obj = {name: "Super", Surname: "Man", age: 23};
-
-var builder = new xml2js.Builder();
-var xml = builder.buildObject(obj);
-```
-
-At the moment, a one to one bi-directional conversion is guaranteed only for
-default configuration, except for `attrkey`, `charkey` and `explicitArray` options
-you can redefine to your taste. Writing CDATA is supported via setting the `cdata`
-option to `true`.
-
-To specify attributes:
-```javascript
-var xml2js = require('xml2js');
-
-var obj = {root: {$: {id: "my id"}, _: "my inner text"}};
-
-var builder = new xml2js.Builder();
-var xml = builder.buildObject(obj);
-```
 
 ### Adding xmlns attributes
 
@@ -367,82 +295,16 @@ value})``. Possible options are:
     ```
     Added in 0.4.6
 
-Options for the `Builder` class
--------------------------------
-These options are specified by ``new Builder({optionName: value})``.
-Possible options are:
-
-  * `attrkey` (default: `$`): Prefix that is used to access the attributes.
-    Version 0.1 default was `@`.
-  * `charkey` (default: `_`): Prefix that is used to access the character
-    content. Version 0.1 default was `#`.
-  * `rootName` (default `root` or the root key name): root element name to be used in case
-     `explicitRoot` is `false` or to override the root element name.
-  * `renderOpts` (default `{ 'pretty': true, 'indent': '  ', 'newline': '\n' }`):
-    Rendering options for xmlbuilder-js.
-    * pretty: prettify generated XML
-    * indent: whitespace for indentation (only when pretty)
-    * newline: newline char (only when pretty)
-  * `xmldec` (default `{ 'version': '1.0', 'encoding': 'UTF-8', 'standalone': true }`:
-    XML declaration attributes.
-    * `xmldec.version` A version number string, e.g. 1.0
-    * `xmldec.encoding` Encoding declaration, e.g. UTF-8
-    * `xmldec.standalone` standalone document declaration: true or false
-  * `doctype` (default `null`): optional DTD. Eg. `{'ext': 'hello.dtd'}`
-  * `headless` (default: `false`): omit the XML header. Added in 0.4.3.
-  * `allowSurrogateChars` (default: `false`): allows using characters from the Unicode
-    surrogate blocks.
-  * `cdata` (default: `false`): wrap text nodes in `<![CDATA[ ... ]]>` instead of
-    escaping when necessary. Does not add `<![CDATA[ ... ]]>` if it is not required.
-    Added in 0.4.5.
-
-`renderOpts`, `xmldec`,`doctype` and `headless` pass through to
-[xmlbuilder-js](https://github.com/oozcitak/xmlbuilder-js).
-
-Updating to new version
-=======================
-
-Version 0.2 changed the default parsing settings, but version 0.1.14 introduced
-the default settings for version 0.2, so these settings can be tried before the
-migration.
-
-```javascript
-var xml2js = require('xml2js');
-var parser = new xml2js.Parser(xml2js.defaults["0.2"]);
-```
-
-To get the 0.1 defaults in version 0.2 you can just use
-`xml2js.defaults["0.1"]` in the same place. This provides you with enough time
-to migrate to the saner way of parsing in `xml2js` 0.2. We try to make the
-migration as simple and gentle as possible, but some breakage cannot be
-avoided.
-
-So, what exactly did change and why? In 0.2 we changed some defaults to parse
-the XML in a more universal and sane way. So we disabled `normalize` and `trim`
-so `xml2js` does not cut out any text content. You can reenable this at will of
-course. A more important change is that we return the root tag in the resulting
-JavaScript structure via the `explicitRoot` setting, so you need to access the
-first element. This is useful for anybody who wants to know what the root node
-is and preserves more information. The last major change was to enable
-`explicitArray`, so everytime it is possible that one might embed more than one
-sub-tag into a tag, xml2js >= 0.2 returns an array even if the array just
-includes one element. This is useful when dealing with APIs that return
-variable amounts of subtags.
-
 Running tests, development
 ==========================
-
-[![Build Status](https://travis-ci.org/Leonidas-from-XIV/node-xml2js.svg?branch=master)](https://travis-ci.org/Leonidas-from-XIV/node-xml2js)
-[![Coverage Status](https://coveralls.io/repos/Leonidas-from-XIV/node-xml2js/badge.svg?branch=)](https://coveralls.io/r/Leonidas-from-XIV/node-xml2js?branch=master)
-[![Dependency Status](https://david-dm.org/Leonidas-from-XIV/node-xml2js.svg)](https://david-dm.org/Leonidas-from-XIV/node-xml2js)
 
 The development requirements are handled by npm, you just need to install them.
 We also have a number of unit tests, they can be run using `npm test` directly
 from the project root. This runs zap to discover all the tests and execute
 them.
 
-If you like to contribute, keep in mind that `xml2js` is written in
-CoffeeScript, so don't develop on the JavaScript files that are checked into
+If you like to contribute, keep in mind that `xml2ts` is written in
+Typescript, so don't develop on the JavaScript files that are checked into
 the repository for convenience reasons. Also, please write some unit test to
 check your behaviour and if it is some user-facing thing, add some
 documentation to this README, so people will know it exists. Thanks in advance!
@@ -452,9 +314,9 @@ Getting support
 
 Please, if you have a problem with the library, first make sure you read this
 README. If you read this far, thanks, you're good. Then, please make sure your
-problem really is with `xml2js`. It is? Okay, then I'll look at it. Send me a
+problem really is with `xml2ts`. It is? Okay, then I'll look at it. Send me a
 mail and we can talk. Please don't open issues, as I don't think that is the
 proper forum for support problems. Some problems might as well really be bugs
-in `xml2js`, if so I'll let you know to open an issue instead :)
+in `xml2ts`, if so I'll let you know to open an issue instead :)
 
 But if you know you really found a bug, feel free to open an issue instead.

@@ -10,6 +10,7 @@
   "author": "Mádai, Csaba",
   "contributors": [],
   "scripts": {
+    "test": "mocha -r ts-node/register test/**/*.spec.ts",
     "coverage": "nyc npm test && nyc report",
     "coveralls": "nyc npm test && nyc report --reporter=text-lcov | coveralls"
   },

@@ -8,6 +8,8 @@
     "declaration": true,
     "pretty": true,
     "outDir": "build",
+    "declarationDir": "build",
+    "declarationMap": true,
     "plugins": [
       {
         "transform": "ts-optchain/transform"
