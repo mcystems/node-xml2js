@@ -6,10 +6,11 @@
     "json"
   ],
   "homepage": "https://github.com/mcystems/node-xml2ts",
-  "version": "0.5.0",
+  "version": "0.5.4",
   "author": "Mádai, Csaba",
   "contributors": [],
   "scripts": {
+    "build": "tsc",
     "test": "mocha -r ts-node/register test/**/*.spec.ts",
     "coverage": "nyc npm test && nyc report",
     "coveralls": "nyc npm test && nyc report --reporter=text-lcov | coveralls"
@@ -20,7 +21,8 @@
   },
   "dependencies": {
     "sax": ">=1.2.4",
-    "xmlbuilder": "~13.0.1"
+    "xmlbuilder": "~13.0.1",
+    "ts-optchain": "^0.1.7"
   },
   "devDependencies": {
     "@types/chai": "^4.1.7",
@@ -33,7 +35,6 @@
     "docco": ">=0.6.2",
     "mocha": "^6.1.4",
     "nyc": ">=2.2.1",
-    "ts-optchain": "^0.1.7",
     "ts-node": "^8.1.0",
     "typescript": "^3.4.5"
   },

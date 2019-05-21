@@ -96,7 +96,7 @@ export class Parser {
 
   getActualPosition(): CharacterPosition {
     return {
-      line: this.saxParser.line,
+      line: this.saxParser.line + 1,
       column: this.saxParser.column,
       pos: this.saxParser.position
     }
