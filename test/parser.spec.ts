@@ -326,7 +326,7 @@ describe('parser tests', () => {
       name: 'emptytest',
       "pos": {
         "column": 16,
-        "line": 27,
+        "line": 28,
         "pos": 1017
       }
     });

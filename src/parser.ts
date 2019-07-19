@@ -25,14 +25,14 @@ const processName = function (processors: ElementNameProcessor[], item) {
 
 
 export class Parser {
-  readonly options: ParserOption;
-  readonly xmlnsKey: string;
+  private readonly options: ParserOption;
+  private readonly xmlnsKey: string;
   private saxParser: SAXParser;
   private resultObject: XmlTsNode | null;
   private stack: Array<XmlTsNode>;
   private resolve: (value?: (PromiseLike<XmlTsNode | null> | XmlTsNode | null)) => void;
   private reject: (reason?: any) => void;
-  readonly tagNameProcessors: Array<ElementNameProcessor> = [];
+  private readonly tagNameProcessors: Array<ElementNameProcessor> = [];
 
   constructor(opts: ParserOption) {
     this.assignOrPush = this.assignOrPush.bind(this);
@@ -94,11 +94,12 @@ export class Parser {
     }
   }
 
-  getActualPosition(): CharacterPosition {
+  private getActualPosition(): CharacterPosition {
     return {
       line: this.saxParser.line + 1,
       column: this.saxParser.column,
-      pos: this.saxParser.position
+      pos: this.saxParser.position,
+      additionalMeta: this.options.additionalMeta
     }
   }
 

@@ -62,6 +62,7 @@ export interface ParserOption {
   valueProcessors: ElementValueProcessor[];
   xmldec: XmlDecl;
   xmlns: boolean;
+  additionalMeta?: any; //additional meta information
 }
 
 export const parserDefaults: ParserOption = {
