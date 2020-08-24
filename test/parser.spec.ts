@@ -89,7 +89,7 @@ describe('parser tests', () => {
     expect(oc(r).sample.chartest[0]._()).to.equals('Character data here!');
     expect(oc(r).sample.cdatatest[0].$.desc()).to.equals('Test for CDATA');
     expect(oc(r).sample.cdatatest[0].$.misc()).to.equals('true');
-    expect(oc(r).sample.cdatatest[0]._()).to.equals('CDATA here!');
+    expect(oc(r).sample.cdatatest[0]._()).to.equals('<!-- comment: hello bello -->CDATA here!');
     expect(oc(r).sample.nochartest[0].$.desc()).to.equals('No data');
     expect(oc(r).sample.nochartest[0].$.misc()).to.equals('false');
     expect(oc(r).sample.listtest[0].item[0]._())
@@ -110,7 +110,7 @@ describe('parser tests', () => {
     expect(oc(r).sample.chartest[0]._()).to.equals('Character data here!');
     expect(oc(r).sample.cdatatest[0].$.desc()).to.equals('Test for CDATA');
     expect(oc(r).sample.cdatatest[0].$.misc()).to.equals('true');
-    expect(oc(r).sample.cdatatest[0]._()).to.equals('CDATA here!');
+    expect(oc(r).sample.cdatatest[0]._()).to.equals('<!-- comment: hello bello -->CDATA here!');
     expect(oc(r).sample.nochartest[0].$.desc()).to.equals('No data');
     expect(oc(r).sample.nochartest[0].$.misc()).to.equals('false');
     expect(oc(r).sample.listtest[0].item[0]._())
@@ -131,7 +131,7 @@ describe('parser tests', () => {
     expect(oc(r).sample.chartest[0]._()).to.equals('Character data here!');
     expect(oc(r).sample.cdatatest[0].desc[0]()).to.equals('Test for CDATA');
     expect(oc(r).sample.cdatatest[0].misc[0]()).to.equals('true');
-    expect(oc(r).sample.cdatatest[0]._()).to.equals('CDATA here!');
+    expect(oc(r).sample.cdatatest[0]._()).to.equals('<!-- comment: hello bello -->CDATA here!');
     expect(oc(r).sample.nochartest[0].desc[0]()).to.equals('No data');
     expect(oc(r).sample.nochartest[0].misc[0]()).to.equals('false');
     expect(oc(r).sample.listtest[0].item[0].subitem[0]._()).to.equals('Foo(1)');
@@ -151,7 +151,7 @@ describe('parser tests', () => {
     expect(oc(r).sample.chartest._()).to.equals('Character data here!');
     expect(oc(r).sample.cdatatest.desc()).to.equals('Test for CDATA');
     expect(oc(r).sample.cdatatest.misc()).to.equals('true');
-    expect(oc(r).sample.cdatatest._()).to.equals('CDATA here!');
+    expect(oc(r).sample.cdatatest._()).to.equals('<!-- comment: hello bello -->CDATA here!');
     expect(oc(r).sample.nochartest.desc()).to.equals('No data');
     expect(oc(r).sample.nochartest.misc()).to.equals('false');
     expect(oc(r).sample.listtest.item[0].subitem[0]._()).to.equals('Foo(1)');
@@ -170,7 +170,7 @@ describe('parser tests', () => {
     expect(oc(r).sample.$$().find(v => v.name === 'chartest')._).to.equals('Character data here!');
     expect(oc(r).sample.$$().find(v => v.name === 'cdatatest').$.desc).to.equals('Test for CDATA');
     expect(oc(r).sample.$$().find(v => v.name === 'cdatatest').$.misc).to.equals('true');
-    expect(oc(r).sample.$$().find(v => v.name === 'cdatatest')._).to.equals('CDATA here!');
+    expect(oc(r).sample.$$().find(v => v.name === 'cdatatest')._).to.equals('<!-- comment: hello bello -->CDATA here!');
     expect(oc(r).sample.$$().find(v => v.name === 'nochartest').$.desc).to.equals('No data');
     expect(oc(r).sample.$$().find(v => v.name === 'nochartest').$.misc).to.equals('false');
     expect(oc(r).sample.$$().find(v => v.name === 'listtest').$$[0]._)
@@ -189,49 +189,49 @@ describe('parser tests', () => {
   it('test parse with explicitChildren and preserveChildrenOrder', async () => {
     const r = await skeleton({...parserDefaults, explicitChildren: true, preserveChildrenOrder: true});
 
-    expect(oc(r).sample.$$[10]().name).to.equals('ordertest');
-    expect(oc(r).sample.$$[10].$$[0]().name).to.equals('one');
-    expect(oc(r).sample.$$[10].$$[0]._()).to.equals('1');
-    expect(oc(r).sample.$$[10].$$[1]().name).to.equals('two');
-    expect(oc(r).sample.$$[10].$$[1]._()).to.equals('2');
-    expect(oc(r).sample.$$[10].$$[2]().name).to.equals('three');
-    expect(oc(r).sample.$$[10].$$[2]._()).to.equals('3');
-    expect(oc(r).sample.$$[10].$$[3]().name).to.equals('one');
-    expect(oc(r).sample.$$[10].$$[3]._()).to.equals('4');
-    expect(oc(r).sample.$$[10].$$[4]().name).to.equals('two');
-    expect(oc(r).sample.$$[10].$$[4]._()).to.equals('5');
-    expect(oc(r).sample.$$[10].$$[5]().name).to.equals('three');
-    expect(oc(r).sample.$$[10].$$[5]._()).to.equals('6');
+    expect(oc(r).sample.$$[11]().name).to.equals('ordertest');
+    expect(oc(r).sample.$$[11].$$[0]().name).to.equals('one');
+    expect(oc(r).sample.$$[11].$$[0]._()).to.equals('1');
+    expect(oc(r).sample.$$[11].$$[1]().name).to.equals('two');
+    expect(oc(r).sample.$$[11].$$[1]._()).to.equals('2');
+    expect(oc(r).sample.$$[11].$$[2]().name).to.equals('three');
+    expect(oc(r).sample.$$[11].$$[2]._()).to.equals('3');
+    expect(oc(r).sample.$$[11].$$[3]().name).to.equals('one');
+    expect(oc(r).sample.$$[11].$$[3]._()).to.equals('4');
+    expect(oc(r).sample.$$[11].$$[4]().name).to.equals('two');
+    expect(oc(r).sample.$$[11].$$[4]._()).to.equals('5');
+    expect(oc(r).sample.$$[11].$$[5]().name).to.equals('three');
+    expect(oc(r).sample.$$[11].$$[5]._()).to.equals('6');
   });
 
   it('test parse with explicitChildren and charsAsChildren and preserveChildrenOrder', async () => {
     const r = await skeleton(
       {...parserDefaults, explicitChildren: true, preserveChildrenOrder: true, charsAsChildren: true});
 
-    expect(oc(r).sample.$$[10]().name).to.equals('ordertest');
-    expect(oc(r).sample.$$[10].$$[0]().name).to.equals('one');
-    expect(oc(r).sample.$$[10].$$[0]._()).to.equals('1');
-    expect(oc(r).sample.$$[10].$$[1]().name).to.equals('two');
-    expect(oc(r).sample.$$[10].$$[1]._()).to.equals('2');
-    expect(oc(r).sample.$$[10].$$[2]().name).to.equals('three');
-    expect(oc(r).sample.$$[10].$$[2]._()).to.equals('3');
-    expect(oc(r).sample.$$[10].$$[3]().name).to.equals('one');
-    expect(oc(r).sample.$$[10].$$[3]._()).to.equals('4');
-    expect(oc(r).sample.$$[10].$$[4]().name).to.equals('two');
-    expect(oc(r).sample.$$[10].$$[4]._()).to.equals('5');
-    expect(oc(r).sample.$$[10].$$[5]().name).to.equals('three');
-    expect(oc(r).sample.$$[10].$$[5]._()).to.equals('6');
+    expect(oc(r).sample.$$[11]().name).to.equals('ordertest');
+    expect(oc(r).sample.$$[11].$$[0]().name).to.equals('one');
+    expect(oc(r).sample.$$[11].$$[0]._()).to.equals('1');
+    expect(oc(r).sample.$$[11].$$[1]().name).to.equals('two');
+    expect(oc(r).sample.$$[11].$$[1]._()).to.equals('2');
+    expect(oc(r).sample.$$[11].$$[2]().name).to.equals('three');
+    expect(oc(r).sample.$$[11].$$[2]._()).to.equals('3');
+    expect(oc(r).sample.$$[11].$$[3]().name).to.equals('one');
+    expect(oc(r).sample.$$[11].$$[3]._()).to.equals('4');
+    expect(oc(r).sample.$$[11].$$[4]().name).to.equals('two');
+    expect(oc(r).sample.$$[11].$$[4]._()).to.equals('5');
+    expect(oc(r).sample.$$[11].$$[5]().name).to.equals('three');
+    expect(oc(r).sample.$$[11].$$[5]._()).to.equals('6');
 
     // test text ordering with XML nodes in the middle
-    expect(oc(r).sample.$$[17]().name).to.equals('textordertest');
-    expect(oc(r).sample.$$[17].$$[0]().name).to.equals('__text__');
-    expect(oc(r).sample.$$[17].$$[0]._()).to.equals('this is text with ');
-    expect(oc(r).sample.$$[17].$$[1]().name).to.equals('b');
-    expect(oc(r).sample.$$[17].$$[1]._()).to.equals('markup');
-    expect(oc(r).sample.$$[17].$$[2]().name).to.equals('em');
-    expect(oc(r).sample.$$[17].$$[2]._()).to.equals('like this');
-    expect(oc(r).sample.$$[17].$$[3]().name).to.equals('__text__');
-    expect(oc(r).sample.$$[17].$$[3]._()).to.equals(' in the middle');
+    expect(oc(r).sample.$$[18]().name).to.equals('textordertest');
+    expect(oc(r).sample.$$[18].$$[0]().name).to.equals('__text__');
+    expect(oc(r).sample.$$[18].$$[0]._()).to.equals('this is text with ');
+    expect(oc(r).sample.$$[18].$$[1]().name).to.equals('b');
+    expect(oc(r).sample.$$[18].$$[1]._()).to.equals('markup');
+    expect(oc(r).sample.$$[18].$$[2]().name).to.equals('em');
+    expect(oc(r).sample.$$[18].$$[2]._()).to.equals('like this');
+    expect(oc(r).sample.$$[18].$$[3]().name).to.equals('__text__');
+    expect(oc(r).sample.$$[18].$$[3]._()).to.equals(' in the middle');
   });
 
   it('test parse with explicitChildren and charsAsChildren and preserveChildrenOrder and includeWhiteChars',
@@ -245,17 +245,17 @@ describe('parser tests', () => {
           includeWhiteChars: true
         });
 
-      expect(oc(r).sample.$$[35]().name).to.equals('textordertest');
-      expect(oc(r).sample.$$[35].$$[0]().name).to.equals('__text__');
-      expect(oc(r).sample.$$[35].$$[0]._()).to.equals('this is text with ');
-      expect(oc(r).sample.$$[35].$$[1]().name).to.equals('b');
-      expect(oc(r).sample.$$[35].$$[1]._()).to.equals('markup');
-      expect(oc(r).sample.$$[35].$$[2]().name).to.equals('__text__');
-      expect(oc(r).sample.$$[35].$$[2]._()).to.equals('   ');
-      expect(oc(r).sample.$$[35].$$[3]().name).to.equals('em');
-      expect(oc(r).sample.$$[35].$$[3]._()).to.equals('like this');
-      expect(oc(r).sample.$$[35].$$[4]().name).to.equals('__text__');
-      expect(oc(r).sample.$$[35].$$[4]._()).to.equals(' in the middle');
+      expect(oc(r).sample.$$[37]().name).to.equals('textordertest');
+      expect(oc(r).sample.$$[37].$$[0]().name).to.equals('__text__');
+      expect(oc(r).sample.$$[37].$$[0]._()).to.equals('this is text with ');
+      expect(oc(r).sample.$$[37].$$[1]().name).to.equals('b');
+      expect(oc(r).sample.$$[37].$$[1]._()).to.equals('markup');
+      expect(oc(r).sample.$$[37].$$[2]().name).to.equals('__text__');
+      expect(oc(r).sample.$$[37].$$[2]._()).to.equals('   ');
+      expect(oc(r).sample.$$[37].$$[3]().name).to.equals('em');
+      expect(oc(r).sample.$$[37].$$[3]._()).to.equals('like this');
+      expect(oc(r).sample.$$[37].$$[4]().name).to.equals('__text__');
+      expect(oc(r).sample.$$[37].$$[4]._()).to.equals(' in the middle');
     });
 
   it(
@@ -271,17 +271,17 @@ describe('parser tests', () => {
       });
 
       // normalized whitespace-only text node becomes empty string
-      expect(oc(r).sample.$$[35]().name).to.equals('textordertest');
-      expect(oc(r).sample.$$[35].$$[0]().name).to.equals('__text__');
-      expect(oc(r).sample.$$[35].$$[0]._()).to.equals('this is text with');
-      expect(oc(r).sample.$$[35].$$[1]().name).to.equals('b');
-      expect(oc(r).sample.$$[35].$$[1]._()).to.equals('markup');
-      expect(oc(r).sample.$$[35].$$[2]().name).to.equals('__text__');
-      expect(oc(r).sample.$$[35].$$[2]._()).to.equals('');
-      expect(oc(r).sample.$$[35].$$[3]().name).to.equals('em');
-      expect(oc(r).sample.$$[35].$$[3]._()).to.equals('like this');
-      expect(oc(r).sample.$$[35].$$[4]().name).to.equals('__text__');
-      expect(oc(r).sample.$$[35].$$[4]._()).to.equals('in the middle');
+      expect(oc(r).sample.$$[37]().name).to.equals('textordertest');
+      expect(oc(r).sample.$$[37].$$[0]().name).to.equals('__text__');
+      expect(oc(r).sample.$$[37].$$[0]._()).to.equals('this is text with');
+      expect(oc(r).sample.$$[37].$$[1]().name).to.equals('b');
+      expect(oc(r).sample.$$[37].$$[1]._()).to.equals('markup');
+      expect(oc(r).sample.$$[37].$$[2]().name).to.equals('__text__');
+      expect(oc(r).sample.$$[37].$$[2]._()).to.equals('');
+      expect(oc(r).sample.$$[37].$$[3]().name).to.equals('em');
+      expect(oc(r).sample.$$[37].$$[3]._()).to.equals('like this');
+      expect(oc(r).sample.$$[37].$$[4]().name).to.equals('__text__');
+      expect(oc(r).sample.$$[37].$$[4]._()).to.equals('in the middle');
     });
 
   it('test element without children', async () => {
@@ -293,7 +293,7 @@ describe('parser tests', () => {
     const r = await skeleton({...parserDefaults, explicitChildren: true, charsAsChildren: true});
 
     expect(oc(r).sample.$$().find(v => v.name === 'chartest')._).to.equals('Character data here!');
-    expect(oc(r).sample.$$().find(v => v.name === 'cdatatest')._).to.equals('CDATA here!');
+    expect(oc(r).sample.$$().find(v => v.name === 'cdatatest')._).to.equals('<!-- comment: hello bello -->CDATA here!');
     expect(oc(r).sample.$$().find(v => v.name === 'listtest').item[0]._)
       .to
       .equals(
@@ -326,8 +326,9 @@ describe('parser tests', () => {
       name: 'emptytest',
       "pos": {
         "column": 16,
-        "line": 28,
-        "pos": 1017
+        "line": 29,
+        "pos": 1138,
+        "additionalMeta": undefined
       }
     });
   });
@@ -366,7 +367,7 @@ describe('parser tests', () => {
     const r = await skeleton({...parserDefaults, ignoreAttrs: true});
 
     expect(oc(r).sample.chartest[0]._()).to.equals('Character data here!');
-    expect(oc(r).sample.cdatatest[0]._()).to.equals('CDATA here!');
+    expect(oc(r).sample.cdatatest[0]._()).to.equals('<!-- comment: hello bello -->CDATA here!');
     expect(oc(r).sample.nochartest[0]._()).to.equals(undefined);
     expect(oc(r).sample.listtest[0].item[0]._())
       .to
@@ -589,5 +590,15 @@ describe('parser tests', () => {
     const r = await skeleton({...parserDefaults, tagNameProcessors: [nameToUpperCase, nameCutoff]});
     expect(oc(r).SAMP().name).to.equals('SAMP');
     expect(oc(r).SAMP.TAGN[0]().name).to.equals('TAGN');
+  });
+
+  it('test parse comment', async()=> {
+    const r = await skeleton({...parserDefaults});
+    expect(oc(r).sample.$$[0].comment()).to.eq(true, "1");
+    expect(oc(r).sample.$$[0]._()).to.eq(" comment: hello bello ", "1m");
+    expect(oc(r).sample.chartest[0].$$[0].comment()).to.eq(true, "2");
+    expect(oc(r).sample.chartest[0].$$[0]._()).to.eq(" comment: hello bello ", "2m");
+    expect(oc(r).sample.cdatatest[0].$$[0].comment()).to.eq(true, "3");
+    expect(oc(r).sample.cdatatest[0].$$[0]._()).to.eq(" comment: hello bello ", "3m");
   });
 });

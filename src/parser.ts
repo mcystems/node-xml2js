@@ -7,7 +7,7 @@ import {CharacterPosition, XmlTsNode} from "./xmlTsNode";
 import {oc} from "ts-optchain";
 
 // Underscore has a nice function for this, but we try to go without dependencies
-const isEmpty = thing => (typeof thing === "object") && (thing != null) && (Object.keys(thing).length === 0);
+// const isEmpty = thing => (typeof thing === "object") && (thing != null) && (Object.keys(thing).length === 0);
 
 const processValue = function (processors: ElementValueProcessor[], item, key?) {
   for (let processor of processors) {
@@ -42,6 +42,7 @@ export class Parser {
     this.onOpenTag = this.onOpenTag.bind(this);
     this.onCloseTag = this.onCloseTag.bind(this);
     this.onText = this.onText.bind(this);
+    this.onComment = this.onComment.bind(this);
 
     this.options = opts;
     // overwrite them with the specified options, if any
@@ -57,7 +58,7 @@ export class Parser {
       this.tagNameProcessors.unshift(new NormalizeProcessor());
       // this.options.tagNameProcessors.unshift(new NormalizeProcessor());
     }
-    if(this.options.tagNameProcessors) {
+    if (this.options.tagNameProcessors) {
       this.tagNameProcessors.push(...this.options.tagNameProcessors);
     }
   }
@@ -129,12 +130,13 @@ export class Parser {
   }
 
   private onCloseTag(): void {
-    let current: XmlTsNode | undefined = this.stack.pop();
-    if (!current) {
+    const stackCurrent: XmlTsNode | undefined = this.stack.pop();
+    if (!stackCurrent) {
       throw new Error('close tab before open');
     }
-    const nodeName = current.name;
 
+    let current: XmlTsNode = stackCurrent;
+    const nodeName = current.name;
     const parent: XmlTsNode | undefined = this.stack[this.stack.length - 1];
 
     if (current._) {
@@ -159,19 +161,7 @@ export class Parser {
       }
     }
 
-    // put children into <childkey> property and unfold chars if necessary
-    if (parent) {
-      parent.$$ = parent.$$ || [];
-      const clone: XmlTsNode = JSON.parse(JSON.stringify(current));
-      parent.$$.push(clone);
-    } else {
-      // if explicitRoot was specified, wrap stuff in the root tag name
-      if (this.options.explicitRoot && current) {
-        // avoid circular references
-        const old: XmlTsNode = current;
-        current = {[nodeName]: old, name: '__logical_root__', pos: {line: 0, column: 0, pos: 0}};
-      }
-    }
+    current = this.addToParent(parent, current, nodeName);
 
     // check whether we closed all the open tags
     if (this.stack.length > 0) {
@@ -181,6 +171,25 @@ export class Parser {
         this.resultObject = current;
       }
     }
+  }
+
+  private addToParent(parent: XmlTsNode, node: XmlTsNode, nodeName?: string): XmlTsNode {
+    // put children into <childkey> property and unfold chars if necessary
+    if (parent) {
+      parent.$$ = parent.$$ || [];
+      const clone: XmlTsNode = JSON.parse(JSON.stringify(node));
+      parent.$$.push(clone);
+    } else {
+      // if explicitRoot was specified, wrap stuff in the root tag name
+      if (this.options.explicitRoot && node) {
+        // avoid circular references
+        if (!nodeName) {
+          throw new Error(`can not add to parent without specifying nodeName`);
+        }
+        return {[nodeName]: node, name: '__logical_root__', pos: {line: 0, column: 0, pos: 0}};
+      }
+    }
+    return node;
   }
 
   private onText(text: string): XmlTsNode | null {
@@ -196,6 +205,18 @@ export class Parser {
       }
     }
     return s;
+  }
+
+  private onComment(text: string): XmlTsNode | null {
+    let parent = this.stack[this.stack.length - 1]
+    let commentNode = {
+      name: '',
+      _: text,
+      pos: this.getActualPosition(),
+      comment: true
+    };
+    this.addToParent(parent, commentNode);
+    return commentNode;
   }
 
   /**
@@ -220,7 +241,7 @@ export class Parser {
     this.saxParser.onend = () => {
       this.resolve(this.resultObject);
     };
-
+    this.saxParser.oncomment = this.onComment;
     this.saxParser.ontext = this.onText;
     return this.saxParser.oncdata = text => {
       const s = this.onText(text);

@@ -16,7 +16,5 @@ export interface XmlTsNode {
   $$?: Array<XmlTsNode>;
   pos: CharacterPosition;
   [name: string]: XmlTsNode | any;
+  comment?: boolean;
 }
-
-
-
